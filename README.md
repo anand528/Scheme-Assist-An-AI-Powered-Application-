@@ -28,6 +28,7 @@ The system uses **FastAPI, LangChain, Gemini LLM, RAG, and automation tools** to
 ![Agent Flow](docs/agent_flow.jpeg)
 
 **Figure 2:** Interaction and decision-making process between agents. The system dynamically decides whether to search for new schemes or explain existing schemes, ensuring accurate and context-aware responses.
+
 ---
 
 ## 📁 Project Structure
