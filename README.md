@@ -17,7 +17,7 @@ The system uses **FastAPI, LangChain, Gemini LLM, RAG, and automation tools** to
 
 ## 🧠 System Architecture
 
-![System Architecture](docs/system_architecture(1).jpeg)
+![System Architecture](docs/system_architecture (1).jpeg)
 
 **Figure 1:** Overall system architecture of Scheme Assist, showing the interaction between the user, frontend, backend services, AI agents, external government portals, and the memory layer.
 
