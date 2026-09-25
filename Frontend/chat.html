@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Chat — Scheme Assistant</title>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+:root{
+  --bg1:#0f172a;
+  --bg2:#062a4b;
+  --accent:#7c3aed;
+  --muted: rgba(255,255,255,0.6);
+  --msg-ai: rgba(124,58,237,0.12);
+  --msg-user: rgba(255,255,255,0.04);
+  font-family: Inter, system-ui, Arial;
+}
+
+body{
+  margin:0;
+  overflow: hidden;
+  min-height:70vh;
+  max-height: 99vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent),
+    radial-gradient(1000px 500px at 90% 90%, rgba(3,105,161,0.08), transparent),
+    linear-gradient(180deg,var(--bg1),var(--bg2));
+  color:#e6eef8;
+  padding:20px;
+}
+
+.scene{
+  width:1000px;
+  max-width:96vw;
+  height:589px;
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 10px 40px rgba(2,6,23,0.7);
+}
+
+.layout{
+  height:95%;
+  display:flex;
+  gap:16px;
+  padding:16px;
+}
+
+/* LEFT PANEL */
+.left-panel{
+  width:260px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.left-top,.left-bottom{
+  flex:1;
+  padding:16px;
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.05), transparent);
+  
+  scroll-behavior: auto;
+}
+
+/* PROFILE */
+.profile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.avatar{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),#06b6d4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+}
+
+.profile-info .name{
+  font-size:14px;
+  font-weight:600;
+}
+
+.profile-info .role{
+  font-size:11px;
+  color:var(--muted);
+}
+
+/* BUTTONS */
+.logout-btn{
+  width:100%;
+  margin:6px 0;
+  padding:8px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-size:13px;
+  background:rgba(239,68,68,0.15);
+  color:#fecaca;
+}
+
+/* EXAMPLES */
+.examples-title{
+  font-size:12px;
+  color:var(--muted);
+  margin:10px 0 6px;
+}
+
+.example-chip{
+  display:block;
+  width:100%;
+  margin-bottom:6px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.06);
+  border:none;
+  color:white;
+  font-size:13px;
+  text-align:left;
+  cursor:pointer;
+}
+.example-chip:hover{
+  background:rgba(124,58,237,0.25);
+}
+
+/* RIGHT PANEL */
+.right-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.logo{
+  width:48px;
+  height:48px;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),#0ea5a6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+}
+
+/* CHAT */
+.chat-window{
+  flex:1;
+  border-radius:14px;
+  padding:16px;
+  overflow:auto;
+  background:rgba(255,255,255,0.02);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.msg{
+  max-width:80%;
+  padding:12px 14px;
+  border-radius:12px;
+  font-size:14px;
+}
+.msg.ai{background:var(--msg-ai)}
+.msg.user{background:var(--msg-user);align-self:flex-end}
+
+/* INPUT */
+.composer{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.03);
+}
+
+textarea{
+  flex:1;
+  background:transparent;
+  border:none;
+  outline:none;
+  resize:none;
+  color:white;
+  font-size:15px;
+}
+.eligibility-form {
+  display: grid;
+  gap: 8px;
+}
+
+.eligibility-form input,
+.eligibility-form select,
+.eligibility-form button {
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.send-btn,.mic-btn{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  border:none;
+  cursor:pointer;
+  font-size:18px;
+  color:white;
+      align-items: center;
+    justify-content: center;
+}
+
+.send-btn{
+  background:linear-gradient(135deg,var(--accent),#06b6d4);
+}
+.mic-btn{
+  background:rgba(255,255,255,0.12);
+}
+.mic-btn.listening{
+  background:#ef4444;
+}
+.details-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.details-placeholder {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.detail-item {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.detail-item span {
+  color: var(--muted)
+}
+
+
+/* MOBILE */
+@media(max-width:768px){
+  .layout{flex-direction:column}
+  .left-panel{width:100%;flex-direction:row}
+}
+</style>
+</head>
+
+<body>
+<div class="scene">
+  <div class="layout">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+      <div class="left-top">
+        <div class="profile">
+          <div class="avatar" id="avatar">G</div>
+          <div class="profile-info">
+            <div class="name" id="profileName">Guest</div>
+            <div class="role">Scheme Assistant User</div>
+          </div>
+        </div>
+
+        <button class="logout-btn" id="logoutBtn" style="display:none;">Logout</button>
+        <button class="logout-btn" id="loginBtn">Login</button>
+
+        <div class="examples">
+          <div class="examples-title">💡 Try asking</div>
+          <button class="example-chip">List All Eligible Schemes</button>
+          <button class="example-chip">Farmer subsidy schemes in Andhra Pradesh</button>
+          <button class="example-chip">Women welfare schemes in India</button>
+          <button class="example-chip">Scholarships for engineering students</button>
+        </div>
+      </div>
+
+      <div class="left-bottom" id="userDetails">
+        <div class="details-title">📋 Your Details</div>
+        <div class="details-placeholder">Loading details...</div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <div class="header">
+        <div class="logo">AI</div>
+        <div>
+          <b>AI – Scheme Assistant</b><br>
+          <small class="muted">Ask in text or voice</small>
+        </div>
+      </div>
+
+      <div id="chat" class="chat-window"></div>
+
+      <div class="composer">
+        <textarea id="input" placeholder="Type or speak..."></textarea>
+        <button id="mic" class="mic-btn">🎤</button>
+        <button id="play" class="mic-btn" type="button" style="display:none;">▶</button>
+        <button id="send" class="send-btn">➤</button>
+      </div>
+
+
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("submit", (e) => e.preventDefault());
+/* ---------------- ELEMENTS ---------------- */
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const micBtn = document.getElementById("mic");
+const playBtn = document.getElementById("play");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const profileName = document.getElementById("profileName");
+const avatar = document.getElementById("avatar");
+
+/* ---------------- STATE ---------------- */
+let lastAIResponse = "";
+let speechUtterance = null;
+let isPaused = false;
+let availableVoices = [];
+let isListening = false;
+
+/* ---------------- LOAD VOICES ---------------- */
+function loadVoices() {
+  availableVoices = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function renderUserDetails(data) {
+  const panel = document.getElementById("userDetails");
+
+  if (!panel) return;
+
+  panel.innerHTML = `
+  <div class="details-title">📋 Your Details</div>
+
+  <div class="detail-item"><span>Gender:</span> ${data.gender ?? "-"}</div>
+  <div class="detail-item"><span>Age:</span> ${data.age ?? "-"}</div>
+  <div class="detail-item"><span>Residence:</span> ${data.residence ?? "-"}</div>
+  <div class="detail-item"><span>State:</span> ${data.state ?? "-"}</div>
+  <div class="detail-item"><span>Caste:</span> ${data.caste ?? "-"}</div>
+  <div class="detail-item"><span>Percentage:</span> ${data.percentage ?? "-"}</div>
+  <div class="detail-item"><span>Minority:</span> ${data.minority ?? "-"}</div>
+  <div class="detail-item"><span>Student:</span> ${data.is_student ?? "-"}</div>
+  <div class="detail-item"><span>Employment:</span> ${data.employment ?? "-"}</div>
+  <div class="detail-item"><span>Gov Employee:</span> ${data.is_gov_employee ?? "-"}</div>
+  <div class="detail-item"><span>BPL:</span> ${data.is_bpl ?? "-"}</div>
+  <div class="detail-item"><span>Disability:</span> ${data.disability ?? "-"}</div>
+  <div class="detail-item"><span>Occupation:</span> ${data.occupation ?? "-"}</div>
+  <div class="detail-item"><span>Annual Income:</span> ₹${data.annual_income ?? "-"}</div>
+  <div class="detail-item"><span>Family Income:</span> ₹${data.family_income ?? "-"}</div>
+  <div class="detail-item"><span>Economic Distress:</span> ${data.economic_distress ?? "-"}</div>
+`;
+
+}
+window.onbeforeunload = () => {
+  console.log("🔥 PAGE RELOADING");
+};
+
+
+function showEligibilityForm() {
+  const formWrapper = document.createElement("div");
+  formWrapper.className = "msg ai";
+
+  formWrapper.innerHTML = `
+    <h3>📝 Please fill the following details</h3>
+
+    <form id="eligibilityForm" class="eligibility-form">
+
+      <label>Gender</label>
+      <select name="gender" id="gender">
+        <option value="">Select</option>
+        <option>Male</option>
+        <option>Female</option>
+        <option>Other</option>
+      </select>
+
+      <label>Age</label>
+      <input type="number" name="age" id="age" />
+
+      <div id="marital-wrapper" style="display:none;">
+        <label>Marital Status</label>
+        <select name="marital">
+          <option value="">Select</option>
+          <option>Never Married</option>
+          <option>Married</option>
+          <option>Divorced</option>
+          <option>Separated</option>
+          <option>Widowed</option>
+        </select>
+      </div>
+
+      <label>State</label>
+      <input name="state" />
+
+      <label>Residence</label>
+      <select name="residence">
+        <option value="">Select</option>
+        <option>Rural</option>
+        <option>Urban</option>
+      </select>
+
+      <label>Caste</label>
+      <select name="caste">
+        <option value="">Select</option>
+        <option>General</option>
+        <option>Other Backward Class (OBC)</option>
+        <option>SC</option>
+        <option>ST</option>
+      </select>
+
+      <label>Disability</label>
+      <select name="disability" id="disability">
+        <option value="">Select</option>
+        <option>No</option>
+        <option>Yes</option>
+      </select>
+
+      <div id="percentage-wrapper" style="display:none;">
+        <label>Disability %</label>
+        <input name="percentage" />
+      </div>
+
+      <div id="minority-wrapper">
+        <label>Minority</label>
+        <select name="minority">
+          <option value="">Select</option>
+          <option>No</option>
+          <option>Yes</option>
+        </select>
+      </div>
+
+      <label>Is Student</label>
+      <select name="is_student" id="is_student">
+        <option value="">Select</option>
+        <option>No</option>
+        <option>Yes</option>
+      </select>
+
+      <div id="employment-wrapper">
+        <label>Employment</label>
+        <select name="employment" id="employment">
+          <option value="">Select</option>
+          <option>Employed</option>
+          <option>Unemployed</option>
+          <option>Self-employed</option>
+        </select>
+      </div>
+
+      <div id="gov-wrapper" style="display:none;">
+        <label>Government Employee</label>
+        <select name="govt" id="govt">
+          <option value="">Select</option>
+          <option>No</option>
+          <option>Yes</option>
+        </select>
+      </div>
+
+      <label>Is BPL</label>
+      <select name="is_bpl" id="is_bpl">
+        <option value="">Select</option>
+        <option>No</option>
+        <option>Yes</option>
+      </select>
+
+      <div id="occupation-wrapper" style="display:none;">
+        <label>Occupation</label>
+        <input name="occupation" />
+      </div>
+
+      <div id="family-income-wrapper" style="display:none;">
+        <label>Family Income</label>
+        <input name="family_income" />
+      </div>
+
+      <div id="annual-income-wrapper" style="display:none;">
+        <label>Annual Income</label>
+        <input name="annual_income" />
+      </div>
+
+      <div id="distress-wrapper" style="display:none;">
+        <label>Economic Distress</label>
+        <select name="distress">
+          <option value="">Select</option>
+          <option>No</option>
+          <option>Yes</option>
+        </select>
+      </div>
+
+      <button type="button">🔍 List All Eligible Schemes</button>
+    </form>
+  `;
+
+  chat.appendChild(formWrapper);
+  chat.scrollTop = chat.scrollHeight;
+
+  // ================= ELEMENTS =================
+  const gender = formWrapper.querySelector("#gender");
+  const age = formWrapper.querySelector("#age");
+  const marital = formWrapper.querySelector("#marital-wrapper");
+
+  const disability = formWrapper.querySelector("#disability");
+  const percentage = formWrapper.querySelector("#percentage-wrapper");
+  const minority = formWrapper.querySelector("#minority-wrapper");
+
+  const student = formWrapper.querySelector("#is_student");
+  const employment = formWrapper.querySelector("#employment");
+  const employmentWrapper = formWrapper.querySelector("#employment-wrapper");
+
+  const govt = formWrapper.querySelector("#govt");
+  const govWrapper = formWrapper.querySelector("#gov-wrapper");
+
+  const bpl = formWrapper.querySelector("#is_bpl");
+
+  const occupation = formWrapper.querySelector("#occupation-wrapper");
+  const familyIncome = formWrapper.querySelector("#family-income-wrapper");
+  const annualIncome = formWrapper.querySelector("#annual-income-wrapper");
+  const distress = formWrapper.querySelector("#distress-wrapper");
+
+  // ================= LOGIC =================
+  function updateForm() {
+
+    // Marital
+    if (gender.value === "Female" && parseInt(age.value) >= 18) {
+      marital.style.display = "block";
+    } else {
+      marital.style.display = "none";
+    }
+
+    // Disability
+    if (disability.value === "Yes") {
+      percentage.style.display = "block";
+      minority.style.display = "none";
+    } else {
+      percentage.style.display = "none";
+      minority.style.display = "block";
+    }
+
+    // RESET
+    occupation.style.display = "none";
+    familyIncome.style.display = "none";
+    annualIncome.style.display = "none";
+    distress.style.display = "none";
+    govWrapper.style.display = "none";
+
+    // STUDENT = NO
+    if (student.value === "No") {
+
+      employmentWrapper.style.display = "block";
+
+      if (employment.value === "Employed") {
+        occupation.style.display = "block";
+        annualIncome.style.display = "block";
+        govWrapper.style.display = "block";
+
+        if (govt.value === "No" && bpl.value === "No") {
+          distress.style.display = "block";
+        }
+
+        if (govt.value === "No" && bpl.value === "Yes") {
+          familyIncome.style.display = "block";
+        }
+      }
+
+      if (employment.value === "Unemployed") {
+        familyIncome.style.display = "block";
+
+        if (bpl.value === "Yes") {
+          distress.style.display = "block";
+        }
+      }
+
+      if (employment.value === "Self-employed") {
+        occupation.style.display = "block";
+        familyIncome.style.display = "block";
+
+        if (bpl.value === "Yes") {
+          distress.style.display = "block";
+        }
+      }
+    }
+
+    // STUDENT = YES
+    if (student.value === "Yes") {
+
+      employmentWrapper.style.display = "none";
+
+      if (bpl.value === "No") {
+        familyIncome.style.display = "block";
+        annualIncome.style.display = "block";
+      }
+
+      if (bpl.value === "Yes") {
+        distress.style.display = "block";
+      }
+    }
+  }
+
+  // EVENTS
+  gender.onchange = updateForm;
+  age.oninput = updateForm;
+  disability.onchange = updateForm;
+  student.onchange = updateForm;
+  employment.onchange = updateForm;
+  bpl.onchange = updateForm;
+  govt.onchange = updateForm;
+
+  updateForm();
+
+  // SUBMIT
+formWrapper.querySelector("button").onclick = handleEligibilitySubmit;
+}
+
+function handleEligibilitySubmit(e) {
+  e.preventDefault();
+
+  const form = document.getElementById("eligibilityForm");
+const formData = new FormData(form);
+  let data = Object.fromEntries(formData);
+
+  // 🔥 CLEAN EMPTY VALUES
+  Object.keys(data).forEach(k => {
+    if (!data[k]) delete data[k];
+  });
+
+  
+
+  const query = `
+List all eligible government schemes for a person with the following details:
+${Object.entries(data).map(([k,v]) => `${k}: ${v}`).join("\n")}
+`;
+
+  appendUserMessage("List all eligible schemes");
+
+  sendGuestQuery(query);
+}
+
+function sendGuestQuery(query) {
+  const typing = document.createElement("div");
+  typing.className = "msg ai";
+  typing.innerText = "Finding eligible schemes...";
+  chat.appendChild(typing);
+
+  fetch("https://scheme-assist-nu.vercel.app/chat-guest", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message: query })
+  })
+  
+    .then(res => res.json())
+    .then(data => {
+      chat.removeChild(typing);
+      appendAIResponseWordByWord(data.agent_result || "No schemes found");
+      sendBtn.display = "none";
+    })
+    .catch(() => {
+      chat.removeChild(typing);
+      appendAIResponseWordByWord("Something went wrong. Please try again.");
+    });
+}
+
+
+/* ---------------- PROFILE ---------------- */
+function loadProfile() {
+  const token = localStorage.getItem("token");
+  
+  if (!token){
+    showEligibilityForm();
+    return;
+  }
+  
+
+  fetch("https://scheme-assist-nu.vercel.app//user", {
+    headers: { "Authorization": "Bearer " + token }
+  })
+    .then(res => {
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        location.href = "login.html";
+        return;
+      }
+      return res.json();
+    })
+    .then(data => {
+    
+      
+      if (!data) return;
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "block";
+      profileName.innerText = data.username;
+      avatar.innerText = data.username.charAt(0).toUpperCase();
+      renderUserDetails(data);
+    })
+    .catch(() => {});
+}
+loadProfile();
+
+loginBtn.onclick = () => location.href = "login.html";
+logoutBtn.onclick = () => {
+  localStorage.removeItem("token");
+  location.href = "login.html";
+};
+
+/* ---------------- CHAT UI ---------------- */
+function appendUserMessage(text) {
+  const d = document.createElement("div");
+  d.className = "msg user";
+  d.innerText = text;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function appendAIResponseWordByWord(markdownText) {
+  const d = document.createElement("div");
+  d.className = "msg ai";
+  chat.appendChild(d);
+
+  const words = markdownText.split(" ");
+  let i = 0;
+  let buffer = "";
+
+  lastAIResponse = markdownText;
+  playBtn.style.display = "inline-flex";
+  playBtn.innerText = "▶";
+  isPaused = false;
+
+  const interval = setInterval(() => {
+    buffer += words[i] + " ";
+    d.innerHTML = marked.parse(buffer);
+    chat.scrollTop = chat.scrollHeight;
+    i++;
+    if (i >= words.length) clearInterval(interval);
+  }, 50);
+}
+
+
+
+
+
+function cleanTextForSpeech(text) {
+  return text
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^[\s]*[-*•]\s+/gm, "")
+    .replace(/[|#_*~=<>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+let audio = null;
+
+playBtn.onclick = async (e) => {
+  e.preventDefault();
+
+  const clean = cleanTextForSpeech(lastAIResponse);
+  const lang = detectLanguageCode(clean);
+
+  playBtn.innerText = "⏳";
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text: clean, lang })
+    });
+
+    if (!res.ok) throw new Error("TTS failed");
+
+    const reader = res.body.getReader();
+    const chunks = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    const blob = new Blob(chunks, { type: "audio/mpeg" });
+    const url = URL.createObjectURL(blob);
+
+    if (audio) audio.pause();
+
+    audio = new Audio(url);
+
+    audio.onended = () => {
+      playBtn.innerText = "▶";
+    };
+
+    playBtn.innerText = "⏸";
+    audio.play();
+
+    if (playBtn.onclick) {
+      playBtn.onclick = () => {
+        if (audio.paused) {
+          audio.play();
+          playBtn.innerText = "⏸";
+        } else {
+          audio.pause();
+          playBtn.innerText = "▶";
+        }
+      };
+    }
+
+  } catch (err) {
+    playBtn.innerText = "▶";
+    console.error(err);
+  }
+};
+function detectLanguageCode(text) {
+  if (/[\u0C00-\u0C7F]/.test(text)) return "te";
+  if (/[\u0900-\u097F]/.test(text)) return "hi";
+  if (/[\u0B80-\u0BFF]/.test(text)) return "ta";
+  if (/[\u0D00-\u0D7F]/.test(text)) return "ml";
+  if (/[\u0C80-\u0CFF]/.test(text)) return "kn";
+  if (/[\u0980-\u09FF]/.test(text)) return "bn";
+  return "en";
+}
+
+/* ---------------- SEND TEXT ---------------- */
+function sendText() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  
+
+  appendUserMessage(text);
+  input.value = "";
+  token= localStorage.getItem("token");
+  const typing = document.createElement("div");
+  typing.className = "msg ai";
+  typing.innerText = "AI is typing...";
+  chat.appendChild(typing);
+  console.log("Token:", token);
+  
+    fetch("http://127.0.0.1:8000/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ message: text })
+    })
+  
+    
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Server error");
+      return data;
+    })
+    .then(data => {
+      chat.removeChild(typing);
+      appendAIResponseWordByWord(data.agent_result || "No response");
+      lastAIResponse = data.agent_result || "";
+    })
+    .catch(err => {
+      chat.removeChild(typing);
+      alert(err.message);
+    });
+}
+
+sendBtn.onclick = sendText;
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendText();
+  }
+});
+
+/* ---------------- VOICE → TEXT (INSTANT + EDITABLE) ---------------- */
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+  const recognition = new SpeechRecognition();
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  micBtn.onclick = () => {
+    if (isListening) {
+      recognition.stop();
+      micBtn.classList.remove("listening");
+      isListening = false;
+      return;
+    }
+    recognition.start();
+    micBtn.classList.add("listening");
+    isListening = true;
+  };
+
+  recognition.onresult = e => {
+    let transcript = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    input.value = transcript.trim(); // ✨ editable text
+  };
+
+  recognition.onend = () => {
+    micBtn.classList.remove("listening");
+    isListening = false;
+  };
+} else {
+  micBtn.disabled = true;
+  micBtn.title = "Speech recognition not supported";
+}
+
+/* ---------------- QUICK EXAMPLES ---------------- */
+document.querySelectorAll(".example-chip").forEach(btn => {
+  btn.onclick = () => {
+    input.value = btn.innerText;
+  };
+});
+</script>
+
+
+
+
+</body>
+</html>
